@@ -37,6 +37,7 @@
   // Event模块      用于Model和View的绑定
   // View模块       用于构建视图 监听model数据变化 根据数据变化修改视图
   // Collection模块 用于组织model, 将多个model放到一个有序的集合中, 集中处理数据同步、事件响应
+  // sync模块       用于同步数据
 
   // Initial Setup
   // -------------
@@ -500,7 +501,7 @@
     // Proxy `Backbone.sync` by default -- but override this if you need
     // custom syncing semantics for *this* particular model.
 
-    // 代理sync同步模块, 可以重写该方法, 自定义同步
+    // 默认代理sync同步模块, 可以重写该方法, 自定义同步
     sync: function() {
       return Backbone.sync.apply(this, arguments);
     },
@@ -1389,7 +1390,7 @@
   // 如果浏览器支持Symbol遍历器
   var $$iterator = typeof Symbol === 'function' && Symbol.iterator;
   if ($$iterator) {
-    Collection.prototype[$$iterator] = Collection.prototype.values;
+    Collection.prototype[$$iterator] = Collection.prototype.values; // 使用for of可遍历集合中的模型对象, 实现Symbol.iterator
   }
 
   // CollectionIterator
@@ -1448,7 +1449,7 @@
 
       // Once exhausted, remove the reference to the collection so future
       // calls to the next method always return done.
-      this._collection = void 0;
+      this._collection = void 0;  // 在一个迭代器实例中只会遍历一次, 一次遍历完就解除该实例对集合的引用
     }
 
     return {value: void 0, done: true};
@@ -1467,6 +1468,8 @@
 
   // Creating a Backbone.View creates its initial element outside of the DOM,
   // if an existing element is not provided...
+
+  // 视图
   var View = Backbone.View = function(options) {
     this.cid = _.uniqueId('view');
     this.preinitialize.apply(this, arguments);
@@ -1489,6 +1492,8 @@
 
     // jQuery delegate for element lookup, scoped to DOM elements within the
     // current view. This should be preferred to global lookups where possible.
+
+    // view中$作为绑定元素的jquery dom查找方法的引用
     $: function(selector) {
       return this.$el.find(selector);
     },
@@ -1504,12 +1509,16 @@
     // **render** is the core function that your view should override, in order
     // to populate its element (`this.el`), with the appropriate HTML. The
     // convention is for **render** to always return `this`.
+
+    // render函数作为核心方法, 主要用作根据数据构造视图, 约定这个方法总是返回当前view的引用this
     render: function() {
       return this;
     },
 
     // Remove this view by taking the element out of the DOM, and removing any
     // applicable Backbone.Events listeners.
+
+    // 将el从dom中移除, 并移除所有的监听器, el是该view所维护的html树的引用
     remove: function() {
       this._removeElement();
       this.stopListening();
@@ -1525,10 +1534,12 @@
 
     // Change the view's element (`this.el` property) and re-delegate the
     // view's events on the new element.
+
+    // 改变view的el引用
     setElement: function(element) {
-      this.undelegateEvents();
+      this.undelegateEvents();    // 先解除现有的事件委托
       this._setElement(element);
-      this.delegateEvents();
+      this.delegateEvents();      // 建立新的事件委托
       return this;
     },
 
@@ -1537,6 +1548,8 @@
     // context or an element. Subclasses can override this to utilize an
     // alternative DOM manipulation API and are only required to set the
     // `this.el` property.
+
+    // $el为el dom元素的jquery包装, 包含jquery的dom操作方法
     _setElement: function(el) {
       this.$el = el instanceof Backbone.$ ? el : Backbone.$(el);
       this.el = this.$el[0];
@@ -1555,6 +1568,8 @@
     // pairs. Callbacks will be bound to the view, with `this` set properly.
     // Uses event delegation for efficiency.
     // Omitting the selector binds the event to `this.el`.
+
+    // 将events中的事件绑定map拆分出来分别进行事件委托
     delegateEvents: function(events) {
       events || (events = _.result(this, 'events'));
       if (!events) return this;
@@ -1572,6 +1587,8 @@
     // Add a single event listener to the view's element (or a child element
     // using `selector`). This only works for delegate-able events: not `focus`,
     // `blur`, and not `change`, `submit`, and `reset` in Internet Explorer.
+
+    // 单个事件委托
     delegate: function(eventName, selector, listener) {
       this.$el.on(eventName + '.delegateEvents' + this.cid, selector, listener);
       return this;
@@ -1580,6 +1597,8 @@
     // Clears all callbacks previously bound to the view by `delegateEvents`.
     // You usually don't need to use this, but may wish to if you have multiple
     // Backbone views attached to the same DOM element.
+
+    // 解除事件绑定
     undelegateEvents: function() {
       if (this.$el) this.$el.off('.delegateEvents' + this.cid);
       return this;
@@ -1602,6 +1621,8 @@
     // If `this.el` is a string, pass it through `$()`, take the first
     // matching element, and re-assign it to `el`. Otherwise, create
     // an element from the `id`, `className` and `tagName` properties.
+
+    // 如果没有设置el属性, 就创建外层元素
     _ensureElement: function() {
       if (!this.el) {
         var attrs = _.extend({}, _.result(this, 'attributes'));
@@ -1629,6 +1650,8 @@
   // collection.each(this.addView);
   //
   // `Function#apply` can be slow so we use the method's arg count, if we know it.
+
+  // 根据underscore的方法参数, 分别包装这些方法. 将参数中需要传入的高阶函数、对象进行cb包装
   var addMethod = function(base, length, method, attribute) {
     switch (length) {
       case 1: return function() {
@@ -1651,7 +1674,9 @@
     }
   };
 
+  // base为包含指定方法的对象, 如underscore _
   var addUnderscoreMethods = function(Class, base, methods, attribute) {
+    // length为需要混合到Class中的方法参数长度
     _.each(methods, function(length, method) {
       if (base[method]) Class.prototype[method] = addMethod(base, length, method, attribute);
     });
@@ -1686,11 +1711,11 @@
 
   // Underscore methods that we want to implement on the Model, mapped to the
   // number of arguments they take.
-  var modelMethods = {keys: 1, values: 1, pairs: 1, invert: 1, pick: 0,
-    omit: 0, chain: 1, isEmpty: 1};
+  var modelMethods = {keys: 1, values: 1, pairs: 1, invert: 1, pick: 0, omit: 0, chain: 1, isEmpty: 1};
 
   // Mix in each Underscore method as a proxy to `Collection#models`.
 
+  // 将underscore中的方法混合到集合模型中去
   _.each([
     [Collection, collectionMethods, 'models'],
     [Model, modelMethods, 'attributes']
@@ -1728,6 +1753,8 @@
   // instead of `application/json` with the model in a param named `model`.
   // Useful when interfacing with server-side languages like **PHP** that make
   // it difficult to read the body of `PUT` requests.
+
+  // 构造ajax请求
   Backbone.sync = function(method, model, options) {
     var type = methodMap[method];
 
@@ -1808,6 +1835,8 @@
 
   // Routers map faux-URLs to actions, and fire events when routes are
   // matched. Creating a new one sets its `routes` hash, if not set statically.
+
+  // 路由管理
   var Router = Backbone.Router = function(options) {
     options || (options = {});
     this.preinitialize.apply(this, arguments);
@@ -1840,6 +1869,7 @@
     //       ...
     //     });
     //
+    // 手动创建路由方法
     route: function(route, name, callback) {
       if (!_.isRegExp(route)) route = this._routeToRegExp(route);
       if (_.isFunction(name)) {
