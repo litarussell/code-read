@@ -163,7 +163,7 @@
   // an event in another object... keeping track of what it's listening to
   // for easier unbinding later.
 
-  // 该方法用于监听另一个对象中的事件 追踪监听的事件以便接触绑定
+  // 该方法用于监听另一个对象中的事件 追踪监听的事件以便解除绑定
   Events.listenTo = function(obj, name, callback) {
     if (!obj) return this;
     var id = obj._listenId || (obj._listenId = _.uniqueId('l'));    // model模型中的监听器id
@@ -371,8 +371,8 @@
     return objEvents;
   };
 
-  // A difficult-to-believe, but optimized internal dispatch function for
-  // triggering events. Tries to keep the usual cases speedy (most internal
+  // A difficult-to-believe, but optimized（优化） internal（内部） dispatch（调度） function for
+  // triggering events. Tries to keep the usual cases speedy（快速完成的） (most internal
   // Backbone events have 3 arguments).
   var triggerEvents = function(events, args) {
     var ev, i = -1, l = events.length, a1 = args[0], a2 = args[1], a3 = args[2];
@@ -388,7 +388,7 @@
   // A listening class that tracks and cleans up memory bindings
   // when all callbacks have been offed.
 
-  // 该类用于追踪绑定
+  // 该类用于当所有的回调都被取消后追踪、清除绑定
   var Listening = function(listener, obj) {
     this.id = listener._listenId; // 一般是在view中调用, id为view模型的监听器id
     this.listener = listener;     // view模型的引用
@@ -448,7 +448,7 @@
   var Model = Backbone.Model = function(attributes, options) {
     var attrs = attributes || {};
     options || (options = {});
-    this.preinitialize.apply(this, arguments);                    // 使用es6 class来定义model的时候 preinitialize方法会在模型实例化之前调用
+    this.preinitialize.apply(this, arguments); // 使用es6 class来定义model的时候 preinitialize方法会在模型实例化之前调用
     this.cid = _.uniqueId(this.cidPrefix);
     this.attributes = {};
     if (options.collection) this.collection = options.collection;
@@ -533,7 +533,7 @@
     // the core primitive operation of a model, updating the data and notifying
     // anyone who needs to know about the change in state. The heart of the beast.
 
-    // 单向绑定最重要的方法, 只有通过set方法设置模型中的属性, 才会触发被view监听的事件, 触发回调, 修改视图
+    // 单向绑定最重要的方法, 只有通过set方法设置模型中的属性, 才会触发被view监听的事件, 触发回调, 修改视图;
     // 对象写法 或者 单独的参数写法 最后都转成可对象map, 以键值对的方式设置
     set: function(key, val, options) {
       if (key == null) return this;
@@ -595,7 +595,7 @@
 
       // Trigger all relevant attribute changes.
 
-      console.log('----------', changes, silent, options)
+      // console.log('----------', changes, silent, options)
       // 如果配置了silent, 则触发所有的更改
       if (!silent) {
         if (changes.length) this._pending = options;
@@ -1474,7 +1474,7 @@
     this.cid = _.uniqueId('view');
     this.preinitialize.apply(this, arguments);
     _.extend(this, _.pick(options, viewOptions));
-    this._ensureElement();
+    this._ensureElement();  // 确认外层dom元素
     this.initialize.apply(this, arguments);
   };
 
