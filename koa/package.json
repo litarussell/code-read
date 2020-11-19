@@ -1,0 +1,11 @@
+{
+    "exports": {
+      ".": {
+        "require": "./application.js",
+        "import": "./koa.mjs"
+      },
+      "./": "./"
+    },
+    "main": "application.js"
+  }
+  
